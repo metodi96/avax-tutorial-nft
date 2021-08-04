@@ -4,10 +4,14 @@ module.exports = {
   networks: {
     fuji: {
       provider: () => {
-        return new HDWalletProvider(process.env.MNEMONIC, 'https://api.avax-test.network/ext/bc/C/rpc')
+        return new HDWalletProvider({
+          mnemonic: process.env.MNEMONIC,
+          providerOrUrl: `https://avalanche--fuji--rpc.datahub.figment.io/apikey/${process.env.APIKEY}/ext/bc/C/rpc`,
+          chainId: "0xa869"
+        })
       },
       network_id: "*",
-      gas: 3000000,
+      gas: 6000000,
       gasPrice: 225000000000
     }
   },

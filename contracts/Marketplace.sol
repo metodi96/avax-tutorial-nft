@@ -4,7 +4,6 @@ pragma solidity ^0.8.6;
 import './Collectible.sol';
 
 contract Marketplace is Collectible {
-
     using SafeMath for uint256;
 
     struct Listing {
@@ -13,7 +12,10 @@ contract Marketplace is Collectible {
         address owner;
     }
 
+    // Mapping for a token id to Listing
     mapping (uint256 => Listing) public tokenIdToListing;
+
+    // Mapping to prevent the same item being listed twice
     mapping (uint256 => bool) public hasBeenListed;
 
     // Mapping used for listing when the owner transfers the token to the contract and would then wish to cancel the listing
@@ -62,7 +64,16 @@ contract Marketplace is Collectible {
         _;
     }
 
-
+    /**
+     * @dev list an item with a `tokenId` for a `price`
+     *
+     * Requirements:
+     * - Only the owner of the `tokenId` can list the item
+     * - The `tokenId` can only be listed once
+     *
+     * Emits a {Transfer} event - transfer the token to this smart contract.
+     * Emits a {ItemListed} event
+     */
     function listItem(
         uint256 tokenId, 
         uint256 price
@@ -87,6 +98,15 @@ contract Marketplace is Collectible {
         );
     }
 
+    /**
+     * @dev Cancel a listing of an item with a `tokenId`
+     *
+     * Requirements:
+     * - Only the account that has listed the `tokenId` can delist it
+     *
+     * Emits a {Transfer} event - transfer the token from this smart contract to the owner.
+     * Emits a {ListingCancelled} event.
+     */
     function cancelListing(uint256 tokenId) public onlyListingAccount(tokenId) {
         //send the token from the smart contract back to the one who listed it
         _transfer(address(this), msg.sender, tokenId);
@@ -103,6 +123,16 @@ contract Marketplace is Collectible {
         );
     }
 
+    /**
+     * @dev Buy an item with a `tokenId` and pay the owner and the creator
+     *
+     * Requirements:
+     * - `tokenId` has to be listed
+     * - `price` needs to be the same as the value sent by the caller
+     *
+     * Emits a {Transfer} event - transfer the item from this smart contract to the buyer.
+     * Emits an {ItemBought} event.
+     */
     function buyItem(uint256 tokenId) public payable {
         require(hasBeenListed[tokenId], "The token needs to be listed in order to be bought!");
         require(tokenIdToListing[tokenId].price == msg.value, "You need to pay the price.");
