@@ -2,16 +2,16 @@
 
 ## Introduction
 
-In this tutorial you will get the chance to get familiar with ERC721 smart contracts and how to deploy these to the Avalanche Fuji testnet and also the Avalanche mainnet (C-Chain). The goal of this tutorial is to be as beginner friendly as possible. I will go through each line of code in order to give you a full understanding of what is happening, so that you can use the concepts as a basis for your first NFT decentralized application. The plan is to showcase:
+In this tutorial you will get familiar with ERC721 (NFT) smart contracts and how to deploy these to the Avalanche Fuji testnet and also the Avalanche mainnet (C-Chain). The goal of this tutorial is to be as beginner friendly as possible. I will go through each line of code in order to give you a full understanding of what is happening, so that you can use the concepts as a basis for your first NFT decentralized application. The plan is to showcase:
 
 1. How to create an ERC721 smart contract, so that you can mint your own ERC721 NFT on Avalanche using Open Zeppelin and the Truffle framework;
-2. How to extend the contract, so each token has royalties;
+2. How to extend the contract, so that each token has royalties;
 3. How to create your own NFT marketplace where you can list your items, cancel listings and purchase other NFTs;
 4. How to extensively test your smart contracts using Truffle's built in Mocha.js library and Open Zeppelin's Test Helper assertion library achieving 100% code coverage;
 5. How to deploy your smart contracts on the Avalanche Fuji testnet and on the Avalanche mainnet;
 
 ## Development
-For this tutorial I have used [Visual Studio Code](https://code.visualstudio.com/) as my code editor but you can used any code editor you'd like. I recommend to install the **solidity** extension by Juan Blanco to get that nice Syntax highlighting along with some code snippets should you go for Visual Studio Code. You would also need to create a MetaMask wallet or whatever similar provider you are comfortable with.
+For this tutorial I have used [Visual Studio Code](https://code.visualstudio.com/) as my code editor of choice but you can used any code editor you like. I recommend to install the **solidity** extension by Juan Blanco to get that nice Syntax highlighting along with some code snippets should you go for Visual Studio Code. You would also need to create a MetaMask wallet or whatever similar provider you are comfortable with in order to deploy to the networks.
 
 ### Dependencies
 * [NodeJS v8.9.4 or later](https://nodejs.org/en/).
@@ -27,7 +27,7 @@ npm init -y
 ```
 
 2. The first one will provide you with a base structure of a Truffle project and the second one will include a **package.json** file to keep track of the dependencies.
-Afterwards, include the following dependencies which will help us building and testing the smart contracts.
+Afterwards, include the following dependencies which will help us build and test the smart contracts.
 ```powershell
 npm install @openzeppelin/contracts @truffle/hdwallet-provider dotenv
 npm install --save-dev @openzeppelin/test-helpers solidity-coverage
@@ -36,7 +36,7 @@ npm install --save-dev @openzeppelin/test-helpers solidity-coverage
 * The [@truffle/hdwallet-provider](https://www.npmjs.com/package/@truffle/hdwallet-provider) is used to sign transactions for addresses derived from a 12 or 24 word mnemonic. In our case we will create a MetaMask wallet and provide the mnemonic from there to deploy to the Avalanche Fuji testnet;
 * The [dotenv](https://www.npmjs.com/package/dotenv) is a zero-dependency module that loads environment variables from a .env file into process.env. We do not want to leak our mnemonic to other people after all;
 * The [@openzeppelin/test-helpers](https://docs.openzeppelin.com/test-helpers/0.5/) is a library that will helps us test when transactions revert and also handle Big Numbers for us. It is a dev dependency;
-* The [solidity-coverage](https://www.npmjs.com/package/solidity-coverage) is a library that we will use to check how much coverage our tests have;
+* The [solidity-coverage](https://www.npmjs.com/package/solidity-coverage) is a library that we will use to check how much coverage our tests have. It is again a dev dependency;
 
 3. Now that we have all the necessary dependencies installed, let us go to the **truffle-config.js** in the root of our project and paste the following lines of code in there:
 
@@ -96,17 +96,14 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Collectible is ERC721URIStorage {
-    using SafeMath for uint256;
-
     // Mapping to check if the metadata has been minted
     mapping(string => bool) public hasBeenMinted;
 
     // Mapping to keep track of the Item
     mapping(uint256 => Item) public tokenIdToItem;
 
-    // A struct for the collectible item containing info about `tokenId`, `owner`, `creator` and the `royalty`
+    // A struct for the collectible item containing info about `owner`, `creator` and the `royalty`
     struct Item {
-        uint256 tokenId;
         address owner;
         address creator;
         uint256 royalty;
@@ -143,11 +140,11 @@ contract Collectible is ERC721URIStorage {
         );
         require(
             royalty >= 0 && royalty <= 40,
-            "Royalties must be between 0% and 40%"
+            "Royalties must be between 0% and 40%."
         );
-        uint256 newItemId = items.length.add(1);
-        Item memory newItem = Item(newItemId, msg.sender, msg.sender, royalty);
+        Item memory newItem = Item(msg.sender, msg.sender, royalty);
         items.push(newItem);
+        uint256 newItemId = items.length;
         _safeMint(msg.sender, newItemId);
         _setTokenURI(newItemId, metadata);
         tokenIdToItem[newItemId] = newItem;
@@ -166,16 +163,16 @@ contract Collectible is ERC721URIStorage {
     /**
      * @dev return an item associated to a provided `tokenId`
      */
-    function getItem(uint256 tokenId) public view returns (uint256, address, address, uint256)
+    function getItem(uint256 tokenId) public view returns (address, address, uint256)
     {
-        return (tokenIdToItem[tokenId].tokenId, tokenIdToItem[tokenId].owner, tokenIdToItem[tokenId].creator, tokenIdToItem[tokenId].royalty);
+        return (tokenIdToItem[tokenId].owner, tokenIdToItem[tokenId].creator, tokenIdToItem[tokenId].royalty);
     }
 }
 ```
 
 Now that we have this let us start from the top and explain what the smart contract does.
 
-2. Collectible.sol logic
+2. **Collectible.sol** logic
 
 * At the top we define the solidity version. At the time of this tutorial this is the latest Solidity version:
 
@@ -184,7 +181,7 @@ Now that we have this let us start from the top and explain what the smart contr
 pragma solidity ^0.8.6;
 ```
 
-* Next we will import the **ERC721URIStorage.sol** contract from Open Zeppelin. This contract is an extension of their **ERC721.sol** contract which takes metadata of an NFT into account as well. We will also use the popular **SafeMath.sol** library for our mathematical operations. This is a library which prevents unsigned integer overflows: 
+* Next we import the **ERC721URIStorage.sol** contract from Open Zeppelin. This contract is an extension of their **ERC721.sol** contract which takes metadata of an NFT into account as well. We will also use the popular **SafeMath.sol** library for our mathematical operations. This is a library which prevents unsigned integer overflows: 
 
 ```javascript
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
@@ -213,8 +210,8 @@ contract Collectible is ERC721URIStorage {
 ```
 
 The main thing to note here is the **Item** struct. We need one to keep track of some extra on-chain data that our NFTs can have. In our case this is the **owner**, the **creator** and the **royalty** which would be a percentage of the price paid out to the **creator** on each purchase of the NFT. 
-With each minting a new **Item** will be pushed to the array of items. This array can be then used to display those properties on the frontend, for example.
-We define an ItemMinted event due to our custom NFTs which we will emit at the end of our minting function. Last but not least, as you can see, we initialize the ERC721 constructor by providing it a name for our token contract and a symbol. These are the two parameters which it takes. Our constructor does not have any, hence the empty body.
+With each minting, a new **Item** will be pushed to the array of items. This array can be then used to display those properties on the frontend, for example.
+We define an **ItemMinted** event due to our custom NFTs which we will emit at the end of our minting function. Last but not least, as you can see, we initialize the ERC721 constructor by providing it a name for our token contract and a symbol. These are the two parameters which it takes. Our constructor does not have any, hence the empty body.
 The mappings are used to keep track of information such as whether a metadata hash has been minted, meaning that we prevent the minting of that metadata again and also to map the token id to an **Item**.
 
 * The **createCollectible(string memory metadata, uint256 royalty)** function:
@@ -243,16 +240,16 @@ function createCollectible(string memory metadata, uint256 royalty) public retur
 ```
 
 The function takes two parameters - metadata and royalty. In the beginning of the function body we see a couple of guard conditions which are used to prevent unwanted transaction execution and to revert the transaction if the conditions are not fulfilled. We use the mapping which we have defined above to check whether the metadata has been minted. We also check whether the royalty is between 0% and 40%. Should we pass these conditions, we can now move on to creating our **Item** with the information we have. 
-At this point the creator is both the owner and the creator, so we use msg.sender which is one of Solidity's global variables and denotes the caller of the function. Our third property is the royalty. After we push this **Item** to the array, we make use of the functions which the **ERC721URIStorage.sol** provides us, namely 
+At this point the creator is both the owner and the creator, so we use **msg.sender** which is one of Solidity's global variables and denotes the caller of the function. Our third property is the royalty. After we push this **Item** to the array, we make use of the functions which the **ERC721URIStorage.sol** provides us, namely: 
 
-*_safeMint(msg.sender, newItemId);*
+```javascript
+_safeMint(msg.sender, newItemId);
+_setTokenURI(newItemId, metadata);
+```
 
-*_setTokenURI(newItemId, metadata);*
-
-The newItemId is simply the length of the array before 
 This will do the minting for us and associate the item id (token id) with the metadata which we have provided. At the end we update the mappings accordingly with the new information and return the token id.
 
-* At the end we define a couple of view functions. These do not cost any gas, since we do not change the state of the blockchain by calling them. In the second function you can notice that in the **returns** part we do not have **Item**, but rather the properties of the **Item**. Solidity allows returning multiple values.
+* Furthermore, we define a couple of view functions. These do not cost any gas, since we do not change the state of the blockchain by calling them. In the second function you can notice that in the **returns** part we do not have **Item**, but rather the properties of the **Item**. Solidity allows returning multiple values.
 
 ```javascript
     function getItemsLength() public view returns (uint256) {
@@ -415,9 +412,9 @@ contract Marketplace is Collectible {
 }
 ```
 
-This might look slighly more complicated but again, I will go through each line of code, so that at the end you can make sense of the logic entirely.
+This might look slighly more complicated but once again, I will go through each line of code, so that at the end you can make sense of the logic entirely.
 
-2. Marketplace.sol logic
+2. **Marketplace.sol** logic
 
 * At the top we define as usual the solidity version:
 
@@ -425,7 +422,7 @@ This might look slighly more complicated but again, I will go through each line 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 ```
-* Next we will import our created **Collectible.sol** contract and inherit from it, since we would want to make use of some of the public state variables there: 
+* Next we will import our already created **Collectible.sol** contract and inherit from it, since we would want to make use of some of the public state variables there: 
 
 ```javascript
 import './Collectible.sol';
@@ -467,7 +464,7 @@ Note: You might have noticed that we again use **SafeMath** for the uint256. Thi
     }
 ```
 
-You can see that again we have a struct for the Listing of a NFT. We use it to define who has listed a NFT and for what price. We have again some mappings to keep track of vital information such as to which token id a listing belongs to, whether the token id has been listed as we do not want any double listings of the same NFT and also we have a mapping to keep track of the address that can claim the NFT after it has been listed. This is of course the owner of the item. We need this, because you will see in a bit that we transfer the NFT to the smart contract when listing it, thus making the smart contract the new owner. We have some events for the different functions, namely for listing, cancelling a listing and buying an item. The new concepts which you see here are the modifiers. These can be appended as function modifiers to the functions and act exactly the same as the require() statements. They are usually used to prevent writing the same conditions for different functions or restricting access only to specific addresses. In this case we have two modifiers. The first one is used to prevent other addresses from listing a token which they do not own, whereas the second one is used for allowing only the address that has listed the token to cancel the listing.
+You can see that again we have a struct for the **Listing** of a NFT. We use it to define who has listed a NFT and for what price. We have again some mappings to keep track of vital information such as to which token id a listing belongs to, whether the token id has been listed, as we do not want any double listings of the same NFT and also we have a mapping to keep track of the address that can claim the NFT after it has been listed. This is of course the owner of the item. We need this, because you will see in a bit that we transfer the NFT to the smart contract when listing it, thus making the smart contract the new owner. We have some events for the different functions, namely for listing, cancelling a listing and buying an item. The new concepts which you see here are the modifiers. These can be appended as function modifiers to the functions and act exactly the same as the require() statements. They are usually used to prevent writing the same conditions for different functions or restricting access only to specific addresses. In this case we have two modifiers. The first one is used to prevent other addresses from listing a token which they do not own, whereas the second one is used for allowing only the address that has listed the token to cancel the listing.
 
 * The **listItem(uint256 tokenId, uint256 price)** function:
  
@@ -486,7 +483,7 @@ function listItem(uint256 tokenId, uint256 price) public onlyTokenOwner(tokenId)
     }
 ```
 
-The function takes two parameters, namely the token id and the price. We begin by defining the constraints which are that only the token owner can list the NFT and that this NFT has not been listed already. Then we proceed by using the *_transfer(msg.sender, address(this), tokenId)* function, which is provided by the ERC721.sol contract, and we transfer the token to the Marketplace.sol contract. Then we specify the msg.sender as the address that can cancel the listing and we update the mappings accordingly by creating a new Listing and by specifying that the token id has been listed. At the end, as usual, we emit an event.
+The function takes two parameters, namely the token id and the price. We begin by defining the constraints which are that only the token owner can list the NFT and that this NFT has not been listed already. Then we proceed by using the *_transfer(msg.sender, address(this), tokenId)* function, which is provided by the **ERC721.sol** contract, and we transfer the token to the **Marketplace.sol** contract. Then we specify the **msg.sender** as the address that can cancel the listing and we update the mappings accordingly by creating a new Listing and by specifying that the token id has been listed. At the end, as usual, we emit an event.
 
 * The **cancelListing(uint256 tokenId)** function:
 
@@ -536,7 +533,7 @@ function buyItem(uint256 tokenId) public payable {
     }
 ```
 
-Here the function takes the token id as a parameter and is a **payable** function, meaning that the user can send AVAX via it to the smart contract. We then first check whether the item has been listed and whether the msg.value which we send with our function call equals the price of the token. If that is the case we split up the msg.value based on the royalty that is defined in the **Item**:
+Here the function takes the token id as a parameter and is a **payable** function, meaning that the user can send AVAX via it to the smart contract. We then first check whether the item has been listed and whether the **msg.value** which we send with our function call equals the price of the token. If that is the case we split up the **msg.value** based on the royalty that is defined in the **Item**. **msg.value** is another global variable in Solidity:
 
 ```javascript
 uint256 royaltyForCreator = tokenIdToItem[tokenId].royalty.mul(msg.value).div(100);
@@ -565,7 +562,7 @@ Afterwards we transfer the NFT from the Marketplace smart contract to the buyer 
 
 ### Testing our smart contracts
 
-Now that we have finished writing our smart contracts it is very important that we test them thoroughly for unexpected behaviour. As we now, once deployed on the blockchain, they are immutable, meaning that they cannot be updated directly. We will be using [Mocha.js](https://mochajs.org/) for testing our contracts. It is integrated into the Truffle framework, so we do not need to install it. We do, however, need Open Zeppelin's Test Helpers, so we will import these in our tests. With that in mind, let us quickly jump into the **test/** directory of our project root and inside of it create two files, namely:
+Now that we have finished writing our smart contracts it is very important that we test them thoroughly for erroneous behaviour. As we know, once deployed on the blockchain, they are immutable. We will be using [Mocha.js](https://mochajs.org/) for testing our contracts. It is integrated into the Truffle framework, so we do not need to install it. We do, however, need Open Zeppelin's Test Helpers, so we will import these in our tests. With that in mind, let us quickly jump into the **test/** directory of our project root and inside of it create two files, namely:
 
 **collectible.test.js**
 
@@ -703,7 +700,7 @@ describe('Collectible deployment', async () => {
 })
 ```
 
-As you can see an **it()** function takes as parameters a description of the test and an asynchronous function. In the first case, we check whether the collectible.address is not equal to those illegal values. In the second test we check whether our Collectible.sol has a name and a symbol. Since those variables are public in the ERC721.sol implementation we can call them as getters. The value is stored in a variable and then this variable is compared to the expected name. If you jump to the Collectible.sol file you can see the expected name in the **constructor()**.
+As you can see an **it()** function takes as parameters a description of the test and an asynchronous function. In the first case, we check whether the collectible.address is not equal to those illegal values. In the second test we check whether our **Collectible.sol** has a name and a symbol. Since those variables are public in the **ERC721.sol** implementation we can call them as getters. The value is stored in a variable and then this variable is compared to the expected name. If you jump to the **Collectible.sol** file you can see the expected name in the **constructor()**.
 
 3. In the second **describe()** block we test our **createCollectible()** function. For that we need to write individual tests for every statement that we make.
 
@@ -774,7 +771,7 @@ it('Give a new id to a newly created token', async () => {
 ```
 Then we simply compare the newTokenId to 1 and expect them to be equal, since our first NFT should have the token id 1.
 
-* Now we not only exectute the **createCollectible()** function but we change the state in our next **it()**:
+* Now we do not only exectute the **createCollectible()** function but also change the state in our next **it()**:
 
 ```javascript
 it('Mint a NFT and emit events.', async () => {
@@ -795,7 +792,7 @@ it('Mint a NFT and emit events.', async () => {
         })
 ```
 
-Our variable now which is the result of the function call is no longer the token id, but a transaction receipt, meaning that we obtain much more information out of it. We test whether the correct events are emitted since they are the signal that we need. In this case we have two. One is the *Transfer* event which comes from the **\_safeMint(msg.sender, newItemId)** function of the **ERC721.sol** smart contract. The other one is our own *ItemMinted* event. We check for the correct name and the correct arguments. 
+Our variable which is the result of the function call is no longer the token id, but a transaction receipt, meaning that we obtain much more information out of it. Cool, right? Let us put this information to use. We test whether the correct events are emitted since they are the signal that we need. In this case we have two. One is the *Transfer* event which comes from the **\_safeMint(msg.sender, newItemId)** function of the **ERC721.sol** smart contract. The other one is our own *ItemMinted* event. We check for the correct name and the correct arguments. 
 
 * In the remaining **it()**-s we check whether the mappings were updated accordingly and whether our **Item** has the correct values. Our final **it()** makes sure that the transaction reverts if we call the **createCollectible()** function with the same metadata parameter value.
 
@@ -1040,7 +1037,7 @@ contract('Marketplace', ([contractDeployer, creator, buyer, secondBuyer]) => {
 });
 ```
 
-Most of the testing concepts such as testing deployment, function reverts and emitted events are repeated here, so I will only go through the differences:
+Most of the concepts such as testing deployment, function reverts and emitted events are repeated here, so I will only go through the differences:
 
 1. As you can see at the top we are importing the **Marketplace** contract as well as some helping functions:
 
@@ -1129,13 +1126,26 @@ truffle run coverage
 
 ### Deploying our smart contracts
 
-Now that our contracts have passed the tests, in order to deploy our contracts to the Fuji testnet, all we need to do is simply run the command:
+1. Now that our contracts have passed the tests, let us have a look at the **migrations/** folder which Truffle provided us in the beginning. Inside of it we have the **1_initial_migration.js** script which is used to deploy the **Migrations.sol** contract that is available in the **contracts/** folder. This contract simply keeps track of the migrations that we do. In order to migrate our own contracts, we create another script called **2_deploy_contracts.js** and inside of it paste the following lines of code:
+
+```javascript
+const Collectible = artifacts.require('Collectible')
+const Marketplace = artifacts.require('Marketplace')
+
+module.exports = async (deployer, network, [owner]) => {
+    await deployer.deploy(Collectible)
+    await deployer.deploy(Marketplace)
+}
+```
+As you can see, it is pretty straightforward. We import the contracts and deploy them via the deployer parameter. This is taken care by Truffle.
+
+2.1. In order to deploy our contracts to the Fuji testnet, all we need to do is simply run the command:
 
 ```powershell
 truffle migrate --network fuji
 ```
 
-And should we want to deploy to the Avalanche mainnet, we simply run:
+2.2. And should we want to deploy to the Avalanche mainnet, we simply run:
 
 ```powershell
 truffle migrate --network mainnet
@@ -1145,16 +1155,16 @@ truffle migrate --network mainnet
 
 To sum up, in this tutorial we got familiar with the following concepts:
 
-1. We managed to create our very own ERC721 smart contract based on the Open Zeppelin implementation;
+1. We managed to create our very own ERC721 smart contract based on the Open Zeppelin implementation utilizing the Truffle framework;
 2. We extended this contract by including royalties;
 3. We created a marketplace where one could list their NFTs, cancel their listings or buy other NFTs;
-4. We learned how to test our smart contracts extensively using the integrated Mocha.js library;
+4. We learned how to test our smart contracts extensively using the integrated Mocha.js library in Truffle;
 5. We deployed our final contracts to the Fuji testnet;
 
 Last but not least, should you try to extend the smart contracts, here are some potential ideas:
 
-* For the Collectible.sol you could add more special properties for your NFTs should you want to use gamification;
-* For the Marketplace.sol you could implement the option to bid on an item;
+* For the **Collectible.sol** you could add more special properties for your NFTs should you want to use gamification;
+* For the **Marketplace.sol** you could implement the option to bid on an item;
 * Include an expiration date for a listing on the marketplace;
 
-Or literally anything else that comes to your mind.
+Or literally anything else that comes to your mind. The opportunities are limitless :)
