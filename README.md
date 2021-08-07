@@ -805,6 +805,8 @@ Our variable now which is the result of the function call is no longer the token
 truffle test
 ```
 
+Note: You might notice that this would run the command *truffle compile* beforehand. This would create a **build/contracts** folder in our root directory where the .json representations of all of our used contracts are stored. These are in fact used when you call functions on the frontend.
+
 II. Go inside the **marketplace.test.js** file and copy the code below:
 
 ```javascript
@@ -1148,3 +1150,11 @@ To sum up, in this tutorial we got familiar with the following concepts:
 3. We created a marketplace where one could list their NFTs, cancel their listings or buy other NFTs;
 4. We learned how to test our smart contracts extensively using the integrated Mocha.js library;
 5. We deployed our final contracts to the Fuji testnet;
+
+Last but not least, should you try to extend the smart contracts, here are some potential ideas:
+
+* For the Collectible.sol you could add more special properties for your NFTs should you want to use gamification;
+* For the Marketplace.sol you could implement the option to bid on an item;
+* Include an expiration date for a listing on the marketplace;
+
+Or literally anything else that comes to your mind.
