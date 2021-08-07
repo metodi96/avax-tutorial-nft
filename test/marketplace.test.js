@@ -57,9 +57,8 @@ contract('Marketplace', ([contractDeployer, creator, buyer, secondBuyer]) => {
 
         it('The listing has the correct data.', async () => {
             const listing = await marketplace.getListing(1)
-            assert.equal(listing['0'], 1, 'The token id of the listing is 1.')
-            assert.equal(listing['1'], convertTokensToWei('5'), 'The price is 5 AVAX.')
-            assert.equal(listing['2'], creator, 'The one who listed it is the creator.')
+            assert.equal(listing['0'], convertTokensToWei('5'), 'The price is 5 AVAX.')
+            assert.equal(listing['1'], creator, 'The one who listed it is the creator.')
         })  
 
         it('The Marketplace SC is now the owner of the NFT and not the seller.', async () => {
@@ -127,9 +126,8 @@ contract('Marketplace', ([contractDeployer, creator, buyer, secondBuyer]) => {
 
         it('The listing should not exist anymore.', async () => {
             const listing = await marketplace.getListing(1)
-            assert.equal(listing['0'], 0, 'This listing should have a token id 0, meaning it does not exist.')
-            assert.equal(listing['1'], 0, 'The price is reset to 0.')
-            assert.equal(listing['2'], 0x0, 'The address(0) should be the one which owns the listing.')
+            assert.equal(listing['0'], 0, 'The price is reset to 0.')
+            assert.equal(listing['1'], 0x0, 'The address(0) should be the one which owns the listing.')
         })
 
         it('The token id 1 is not listed anymore.', async () => {
@@ -193,9 +191,8 @@ contract('Marketplace', ([contractDeployer, creator, buyer, secondBuyer]) => {
 
         it('The listing should not exist anymore.', async () => {
             const listing = await marketplace.getListing(1)
-            assert.equal(listing['0'], 0, 'This listing should have a token id 0, meaning it does not exist.')
-            assert.equal(listing['1'], 0, 'The price is reset to 0.')
-            assert.equal(listing['2'], 0x0, 'The address(0) should be the one which owns the listing.')
+            assert.equal(listing['0'], 0, 'The price is reset to 0.')
+            assert.equal(listing['1'], 0x0, 'The address(0) should be the one which owns the listing.')
         })
 
         it('The token id 1 is not listed anymore.', async () => {
@@ -205,11 +202,10 @@ contract('Marketplace', ([contractDeployer, creator, buyer, secondBuyer]) => {
 
         it('The item has the correct data.', async () => {
             const item = await marketplace.getItem(1)
-            assert.equal(item['0'], 1, 'The token id is 1.')
-            assert.notEqual(item['1'], creator, 'The owner should not be the creator.')
-            assert.equal(item['1'], buyer, 'The buyer is the owner now.')
-            assert.equal(item['2'], creator, 'The creator remains the creator address.')
-            assert.equal(item['3'], 20, 'The royalty is set to 20.')
+            assert.notEqual(item['0'], creator, 'The owner should not be the creator.')
+            assert.equal(item['0'], buyer, 'The buyer is the owner now.')
+            assert.equal(item['1'], creator, 'The creator remains the creator address.')
+            assert.equal(item['2'], 20, 'The royalty is set to 20.')
         })
 
         it('The balances of creator and first buyer are correct.', async () => {

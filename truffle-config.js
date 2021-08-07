@@ -7,11 +7,21 @@ module.exports = {
         return new HDWalletProvider({
           mnemonic: process.env.MNEMONIC,
           providerOrUrl: `https://avalanche--fuji--rpc.datahub.figment.io/apikey/${process.env.APIKEY}/ext/bc/C/rpc`,
-          chainId: "0xa869"
+          chainId: '43113'
         })
       },
       network_id: "*",
-      gas: 6000000,
+      gasPrice: 225000000000
+    },
+    mainnet: {
+      provider: () => {
+        return new HDWalletProvider({
+          mnemonic: process.env.MNEMONIC,
+          providerOrUrl: `https://api.avax.network/ext/bc/C/rpc`,
+          chainId: '43114',
+        })
+      },
+      network_id: "*",
       gasPrice: 225000000000
     }
   },

@@ -7,7 +7,6 @@ contract Marketplace is Collectible {
     using SafeMath for uint256;
 
     struct Listing {
-        uint256 tokenId;
         uint256 price;
         address owner;
     }
@@ -24,7 +23,7 @@ contract Marketplace is Collectible {
     /**
      * @dev Emitted when a `tokenId` has been listed for a `price` by a `seller`
     */
-    event ItemListed(uint256 tokenId, uint256 price,  address seller);
+    event ItemListed(uint256 tokenId, uint256 price, address seller);
 
     /**
      * @dev Emitted when a `tokenId` listing for a `price` has been cancelled by a `seller`
@@ -68,7 +67,6 @@ contract Marketplace is Collectible {
         _transfer(msg.sender, address(this), tokenId);
         claimableByAccount[tokenId] = msg.sender;
         tokenIdToListing[tokenId] = Listing(
-            tokenId,
             price,
             msg.sender
         );
@@ -136,9 +134,9 @@ contract Marketplace is Collectible {
     /**
      * @dev return a listing of a `tokenId`
      */
-    function getListing(uint256 tokenId) public view returns (uint256, uint256, address)
+    function getListing(uint256 tokenId) public view returns (uint256, address)
     {
-        return (tokenIdToListing[tokenId].tokenId, tokenIdToListing[tokenId].price, tokenIdToListing[tokenId].owner);
+        return (tokenIdToListing[tokenId].price, tokenIdToListing[tokenId].owner);
     }
 
 }

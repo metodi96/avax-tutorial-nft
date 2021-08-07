@@ -1,11 +1,11 @@
 const Collectible = artifacts.require('./Collectible')
 const { expectRevert } = require('@openzeppelin/test-helpers')
 
-contract('Collectible', ([owner, creator, buyer]) => {
+contract('Collectible', ([contractDeployer, creator, buyer]) => {
     let collectible;
 
     before(async () => {
-        collectible = await Collectible.new({ from: owner })
+        collectible = await Collectible.new({ from: contractDeployer })
     });
 
     describe('Collectible deployment', async () => {
@@ -65,11 +65,10 @@ contract('Collectible', ([owner, creator, buyer]) => {
 
         it('The new item has the correct data.', async () => {
             const item = await collectible.getItem(1)
-            assert.equal(item['0'], 1, 'The token id is 1.')
-            assert.notEqual(item['1'], buyer, 'The buyer should not be the creator.')
-            assert.equal(item['1'], creator, 'The creator is the owner.')
-            assert.equal(item['2'], creator, 'The creator is the creator.')
-            assert.equal(item['3'], 20, 'The royalty is set to 20.')
+            assert.notEqual(item['0'], buyer, 'The buyer should not be the creator.')
+            assert.equal(item['0'], creator, 'The creator is the owner.')
+            assert.equal(item['1'], creator, 'The creator is the creator.')
+            assert.equal(item['2'], 20, 'The royalty is set to 20.')
         })
 
         it('Check if hash has been minted and that you cannot mint the same hash again.', async () => {

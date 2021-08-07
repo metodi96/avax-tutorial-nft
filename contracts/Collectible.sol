@@ -5,17 +5,14 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Collectible is ERC721URIStorage {
-    using SafeMath for uint256;
-
     // Mapping to check if the metadata has been minted
     mapping(string => bool) public hasBeenMinted;
 
     // Mapping to keep track of the Item
     mapping(uint256 => Item) public tokenIdToItem;
 
-    // A struct for the collectible item containing info about `tokenId`, `owner`, `creator` and the `royalty`
+    // A struct for the collectible item containing info about `owner`, `creator` and the `royalty`
     struct Item {
-        uint256 tokenId;
         address owner;
         address creator;
         uint256 royalty;
@@ -54,9 +51,9 @@ contract Collectible is ERC721URIStorage {
             royalty >= 0 && royalty <= 40,
             "Royalties must be between 0% and 40%"
         );
-        uint256 newItemId = items.length.add(1);
-        Item memory newItem = Item(newItemId, msg.sender, msg.sender, royalty);
+        Item memory newItem = Item(msg.sender, msg.sender, royalty);
         items.push(newItem);
+        uint256 newItemId = items.length;
         _safeMint(msg.sender, newItemId);
         _setTokenURI(newItemId, metadata);
         tokenIdToItem[newItemId] = newItem;
@@ -75,8 +72,8 @@ contract Collectible is ERC721URIStorage {
     /**
      * @dev return an item associated to a provided `tokenId`
      */
-    function getItem(uint256 tokenId) public view returns (uint256, address, address, uint256)
+    function getItem(uint256 tokenId) public view returns (address, address, uint256)
     {
-        return (tokenIdToItem[tokenId].tokenId, tokenIdToItem[tokenId].owner, tokenIdToItem[tokenId].creator, tokenIdToItem[tokenId].royalty);
+        return (tokenIdToItem[tokenId].owner, tokenIdToItem[tokenId].creator, tokenIdToItem[tokenId].royalty);
     }
 }
