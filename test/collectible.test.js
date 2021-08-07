@@ -33,7 +33,7 @@ contract('Collectible', ([contractDeployer, creator, buyer]) => {
         })
 
         it('The royalty needs to be a number between 0 and 40.', async () => {
-            await expectRevert(collectible.createCollectible('metadata', 41), "Royalties must be between 0% and 40%");
+            await expectRevert(collectible.createCollectible('metadata', 41), "Royalties must be between 0% and 40%.");
         })
 
         it('Give a new id to a newly created token', async () => {

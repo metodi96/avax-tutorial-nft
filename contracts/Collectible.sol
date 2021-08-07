@@ -49,7 +49,7 @@ contract Collectible is ERC721URIStorage {
         );
         require(
             royalty >= 0 && royalty <= 40,
-            "Royalties must be between 0% and 40%"
+            "Royalties must be between 0% and 40%."
         );
         Item memory newItem = Item(msg.sender, msg.sender, royalty);
         items.push(newItem);

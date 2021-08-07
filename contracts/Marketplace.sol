@@ -62,7 +62,7 @@ contract Marketplace is Collectible {
      * Emits a {ItemListed} event
      */
     function listItem(uint256 tokenId, uint256 price) public onlyTokenOwner(tokenId) {
-        require(!hasBeenListed[tokenId], "The token can only be listed once");
+        require(!hasBeenListed[tokenId], "The token can only be listed once.");
         //send the token to the smart contract
         _transfer(msg.sender, address(this), tokenId);
         claimableByAccount[tokenId] = msg.sender;
@@ -121,7 +121,7 @@ contract Marketplace is Collectible {
         _transfer(address(this), msg.sender, tokenId);
 
         //Modify the owner property of the item to be the buyer
-        Collectible.Item storage item = tokenIdToItem[tokenId];
+        Item storage item = tokenIdToItem[tokenId];
         item.owner = msg.sender;
 
         //clean up
