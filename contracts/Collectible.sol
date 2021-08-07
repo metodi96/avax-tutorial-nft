@@ -5,20 +5,28 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Collectible is ERC721URIStorage {
+    using SafeMath for uint256;
+
     // Mapping to check if the metadata has been minted
     mapping(string => bool) public hasBeenMinted;
 
     // Mapping to keep track of the Item
     mapping(uint256 => Item) public tokenIdToItem;
 
-    // A struct for the collectible item containing info about `owner`, `creator` and the `royalty`
+    // A struct for the collectible item containing info about `tokenId`, `owner`, `creator` and the `royalty`
     struct Item {
+        uint256 tokenId;
         address owner;
         address creator;
         uint256 royalty;
     }
 
     Item[] private items;
+
+    /**
+     * @dev Emitted when a `tokenId` has been bought for a `price` by a `buyer`
+    */
+    event ItemMinted(uint256 tokenId, address creator, string metadata, uint256 royalty);
 
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection inheriting from the ERC721 smart contract.
@@ -40,22 +48,20 @@ contract Collectible is ERC721URIStorage {
     {
         require(
             !hasBeenMinted[metadata],
-            "This metadata has already been used to mint an NFT!"
+            "This metadata has already been used to mint an NFT."
         );
         require(
             royalty >= 0 && royalty <= 40,
             "Royalties must be between 0% and 40%"
         );
-
-        uint256 newItemId = items.length;
-
-        items.push(Item(msg.sender, msg.sender, royalty));
-
+        uint256 newItemId = items.length.add(1);
+        Item memory newItem = Item(newItemId, msg.sender, msg.sender, royalty);
+        items.push(newItem);
         _safeMint(msg.sender, newItemId);
         _setTokenURI(newItemId, metadata);
-
+        tokenIdToItem[newItemId] = newItem;
         hasBeenMinted[metadata] = true;
-
+        emit ItemMinted(newItemId, msg.sender, metadata, royalty);
         return newItemId;
     }
 
@@ -67,10 +73,10 @@ contract Collectible is ERC721URIStorage {
     }
 
     /**
-     * @dev return an item with an `index` from the items array
+     * @dev return an item associated to a provided `tokenId`
      */
-    function getItem(uint256 index) public view returns (address, address, uint256)
+    function getItem(uint256 tokenId) public view returns (uint256, address, address, uint256)
     {
-        return (items[index].owner, items[index].creator, items[index].royalty);
+        return (tokenIdToItem[tokenId].tokenId, tokenIdToItem[tokenId].owner, tokenIdToItem[tokenId].creator, tokenIdToItem[tokenId].royalty);
     }
 }

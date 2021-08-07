@@ -1,5 +1,5 @@
 const Collectible = artifacts.require('./Collectible')
-const truffleAssert = require('truffle-assertions')
+const { expectRevert } = require('@openzeppelin/test-helpers')
 
 contract('Collectible', ([owner, creator, buyer]) => {
     let collectible;
@@ -33,22 +33,29 @@ contract('Collectible', ([owner, creator, buyer]) => {
         })
 
         it('The royalty needs to be a number between 0 and 40.', async () => {
-            await truffleAssert.reverts(collectible.createCollectible('metadata', 41));
+            await expectRevert(collectible.createCollectible('metadata', 41), "Royalties must be between 0% and 40%");
         })
 
         it('Give a new id to a newly created token', async () => {
-            const newTokenId = await collectible.createCollectible.call('metadata', 5, { from: creator })
-            assert.equal(parseInt(newTokenId.toString()), 0, 'The new token id should be 0.')
+            const newTokenId = await collectible.createCollectible.call('metadata', 20, { from: creator })
+            assert.equal(parseInt(newTokenId.toString()), 1, 'The new token id should be 1.')
         })
 
         it('Mint a NFT and emit events.', async () => {
-            const result = await collectible.createCollectible('metadata', 5, { from: creator })
-            assert.equal(result.logs.length, 1, 'Should trigger one event.');
+            const result = await collectible.createCollectible('metadata', 20, { from: creator })
+            assert.equal(result.logs.length, 2, 'Should trigger two events.');
             //event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
             assert.equal(result.logs[0].event, 'Transfer', 'Should be the \'Transfer\' event.');
             assert.equal(result.logs[0].args.from, 0x0, 'Should be the 0x0 address.');
-            assert.equal(result.logs[0].args.to, creator, 'should log the recipient which is the creator.');
-            assert.equal(result.logs[0].args.tokenId, 0, 'should log the token id which is 1.');
+            assert.equal(result.logs[0].args.to, creator, 'Should log the recipient which is the creator.');
+            assert.equal(result.logs[0].args.tokenId, 1, 'Should log the token id which is 1.');
+
+            //event ItemMinted(uint256 tokenId, address creator, string metadata, uint256 royalty);
+            assert.equal(result.logs[1].event, 'ItemMinted', 'Should be the \'ItemMinted\' event.');
+            assert.equal(result.logs[1].args.tokenId, 1, 'Should be the token id 1.');
+            assert.equal(result.logs[1].args.creator, creator, 'Should log the creator.');
+            assert.equal(result.logs[1].args.metadata, 'metadata', 'Should log the metadata correctly.');
+            assert.equal(result.logs[1].args.royalty, 20, 'Should log the royalty as 20.');
         })
 
         it('The items array has a length of 1.', async () => {
@@ -57,17 +64,18 @@ contract('Collectible', ([owner, creator, buyer]) => {
         })
 
         it('The new item has the correct data.', async () => {
-            const item = await collectible.getItem(0)
-            assert.notEqual(item['0'], buyer, 'The buyer should not be the creator.')
-            assert.equal(item['0'], creator, 'The creator is the owner.')
-            assert.equal(item['1'], creator, 'The creator is the creator.')
-            assert.equal(item['2'], 5, 'The royalty is set to 5.')
+            const item = await collectible.getItem(1)
+            assert.equal(item['0'], 1, 'The token id is 1.')
+            assert.notEqual(item['1'], buyer, 'The buyer should not be the creator.')
+            assert.equal(item['1'], creator, 'The creator is the owner.')
+            assert.equal(item['2'], creator, 'The creator is the creator.')
+            assert.equal(item['3'], 20, 'The royalty is set to 20.')
         })
 
         it('Check if hash has been minted and that you cannot mint the same hash again.', async () => {
             const hasBeenMinted = await collectible.hasBeenMinted('metadata')
             assert.equal(hasBeenMinted, true, 'The hash \'metadata\' has been minted.')
-            await truffleAssert.reverts(collectible.createCollectible('metadata', 10, { from: creator }));
+            await expectRevert(collectible.createCollectible('metadata', 30, { from: creator }), 'This metadata has already been used to mint an NFT.');
         })
 
     })

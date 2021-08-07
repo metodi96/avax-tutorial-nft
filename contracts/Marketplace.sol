@@ -24,29 +24,17 @@ contract Marketplace is Collectible {
     /**
      * @dev Emitted when a `tokenId` has been listed for a `price` by a `seller`
     */
-    event ItemListed(
-        uint256 tokenId,
-        uint256 price, 
-        address seller
-    );
+    event ItemListed(uint256 tokenId, uint256 price,  address seller);
 
     /**
      * @dev Emitted when a `tokenId` listing for a `price` has been cancelled by a `seller`
     */
-    event ListingCancelled(
-        uint256 tokenId,
-        uint256 price, 
-        address seller
-    );
+    event ListingCancelled(uint256 tokenId, uint256 price, address seller);
 
     /**
      * @dev Emitted when a `tokenId` has been bought for a `price` by a `buyer`
     */
-    event ItemBought(
-        uint256 tokenId,
-        uint256 price,
-        address buyer
-    );
+    event ItemBought(uint256 tokenId, uint256 price, address buyer);
 
     modifier onlyTokenOwner(uint256 tokenId) {
         require(
@@ -74,28 +62,18 @@ contract Marketplace is Collectible {
      * Emits a {Transfer} event - transfer the token to this smart contract.
      * Emits a {ItemListed} event
      */
-    function listItem(
-        uint256 tokenId, 
-        uint256 price
-    ) public onlyTokenOwner(tokenId) {
+    function listItem(uint256 tokenId, uint256 price) public onlyTokenOwner(tokenId) {
         require(!hasBeenListed[tokenId], "The token can only be listed once");
-
-         //send the token to the smart contract
+        //send the token to the smart contract
         _transfer(msg.sender, address(this), tokenId);
         claimableByAccount[tokenId] = msg.sender;
-
         tokenIdToListing[tokenId] = Listing(
             tokenId,
             price,
             msg.sender
         );
-
         hasBeenListed[tokenId] = true;
-        emit ItemListed(
-            tokenId,
-            price,
-            msg.sender
-        );
+        emit ItemListed(tokenId, price, msg.sender);
     }
 
     /**
@@ -111,16 +89,10 @@ contract Marketplace is Collectible {
         //send the token from the smart contract back to the one who listed it
         _transfer(address(this), msg.sender, tokenId);
         uint256 price = tokenIdToListing[tokenId].price;
-
         delete claimableByAccount[tokenId];
         delete tokenIdToListing[tokenId];
-        hasBeenListed[tokenId] = false;
-
-        emit ListingCancelled(
-            tokenId,
-            price,
-            msg.sender
-        );
+        delete hasBeenListed[tokenId];
+        emit ListingCancelled(tokenId, price, msg.sender);
     }
 
     /**
@@ -134,33 +106,39 @@ contract Marketplace is Collectible {
      * Emits an {ItemBought} event.
      */
     function buyItem(uint256 tokenId) public payable {
-        require(hasBeenListed[tokenId], "The token needs to be listed in order to be bought!");
-        require(tokenIdToListing[tokenId].price == msg.value, "You need to pay the price.");
+        require(hasBeenListed[tokenId], "The token needs to be listed in order to be bought.");
+        require(tokenIdToListing[tokenId].price == msg.value, "You need to pay the correct price.");
 
-        //split up the value for owner and for creator
-
+        //split up the price between owner and creator
         uint256 royaltyForCreator = tokenIdToItem[tokenId].royalty.mul(msg.value).div(100);
         uint256 remainder = msg.value.sub(royaltyForCreator);
-
         //send to creator
-        (bool sentRoyalty, ) = tokenIdToItem[tokenId].creator.call{value: royaltyForCreator}("");
-        require(sentRoyalty, "Failed to send AVAX");
-
+        (bool isRoyaltySent, ) = tokenIdToItem[tokenId].creator.call{value: royaltyForCreator}("");
+        require(isRoyaltySent, "Failed to send AVAX");
         //send to owner
-        (bool sentRemainder, ) = tokenIdToItem[tokenId].owner.call{value: remainder}("");
-        require(sentRemainder, "Failed to send AVAX");
+        (bool isRemainderSent, ) = tokenIdToItem[tokenId].owner.call{value: remainder}("");
+        require(isRemainderSent, "Failed to send AVAX");
 
         //transfer the token from the smart contract back to the buyer
         _transfer(address(this), msg.sender, tokenId);
 
-        delete tokenIdToListing[tokenId];
-        hasBeenListed[tokenId] = false;
+        //Modify the owner property of the item to be the buyer
+        Collectible.Item storage item = tokenIdToItem[tokenId];
+        item.owner = msg.sender;
 
-        emit ItemBought(
-            tokenId,
-            msg.value,
-            msg.sender
-        );
+        //clean up
+        delete tokenIdToListing[tokenId];
+        delete claimableByAccount[tokenId];
+        delete hasBeenListed[tokenId];
+        emit ItemBought(tokenId, msg.value, msg.sender);
+    }
+
+    /**
+     * @dev return a listing of a `tokenId`
+     */
+    function getListing(uint256 tokenId) public view returns (uint256, uint256, address)
+    {
+        return (tokenIdToListing[tokenId].tokenId, tokenIdToListing[tokenId].price, tokenIdToListing[tokenId].owner);
     }
 
 }
